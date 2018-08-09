@@ -1,3 +1,6 @@
 [submodule "tiny-process-library"]
 	path = tiny-process-library
 	url = https://gitlab.com/eidheim/tiny-process-library.git
+[submodule "msgpackpp"]
+	path = msgpackpp
+	url = git@github.com:ousttrue/msgpackpp.git
