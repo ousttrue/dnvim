@@ -1,9 +1,9 @@
 SET(EXE_NAME dnvim)
 FILE(GLOB SRC
-    ../tiny-process-library/process.hpp
-    ../tiny-process-library/process.cpp
-    ../tiny-process-library/process_win.cpp
     ../msgpackpp/include/msgpackpp.h
+    tiny-process-library/process.hpp
+    tiny-process-library/process.cpp
+    tiny-process-library/process_win.cpp
     *.cpp
     *.h
     d3d/*.cpp
@@ -14,7 +14,7 @@ FILE(GLOB SRC
 ADD_EXECUTABLE(${EXE_NAME} WIN32 ${SRC})
 
 TARGET_INCLUDE_DIRECTORIES(${EXE_NAME} PUBLIC
-	../tiny-process-library
+	tiny-process-library
     ../msgpackpp/include
     ../plog/include
     )
