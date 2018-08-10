@@ -8,8 +8,9 @@
 
 #include <plog/Log.h>
 #include <plog/Appenders/DebugOutputAppender.h>
-#include <plog/Appenders/ColorConsoleAppender.h>
+//#include <plog/Appenders/ColorConsoleAppender.h>
 
+#include <Windows.h>
 
 class Dispatcher
 {
@@ -194,14 +195,28 @@ public:
 };
 
 
-int main(int argc, char **argv)
+#define LAUNCH_COMMAND "nvim --embed"
+
+
+int WINAPI WinMain(
+	HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine,
+	int nCmdShow
+)
 {
-	//static plog::DebugOutputAppender<plog::TxtFormatter> debugOutputAppender;
-	//plog::init(plog::verbose, &debugOutputAppender);
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
+
+#if 1
+	static plog::DebugOutputAppender<plog::TxtFormatter> debugOutputAppender;
+	plog::init(plog::verbose, &debugOutputAppender);
+#else
 	static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
 	plog::init(plog::verbose, &consoleAppender);
+#endif
 
-	LOGI << "Example 5 - demonstrates Process::try_get_exit_status";
+	LOGI << "dnvim";
 
 	Dispatcher dispatcher;
 	Grid grid;
@@ -221,7 +236,7 @@ int main(int argc, char **argv)
 	DISPATCHER_ADD_METHOD(mode_change);
 #undef DISPACHER_ADD_METHOD
 
-	TinyProcessLib::Process process1("nvim --embed", "", [&dispatcher](const char *bytes, size_t n) {
+	TinyProcessLib::Process process1(LAUNCH_COMMAND, "", [&dispatcher](const char *bytes, size_t n) {
 
 		dispatcher.push_bytes(bytes, n);
 
