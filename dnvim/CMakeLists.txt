@@ -6,7 +6,9 @@ FILE(GLOB SRC
     ../msgpackpp/include/msgpackpp.h
     *.cpp
     *.h
-    resource.rc
+    d3d/*.cpp
+    d3d/*.h
+    d3d/resource.rc
     ) 
 
 ADD_EXECUTABLE(${EXE_NAME} WIN32 ${SRC})

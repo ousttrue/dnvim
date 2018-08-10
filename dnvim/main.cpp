@@ -1,5 +1,5 @@
-#include "D3D11Manager.h"
-#include "resource.h"
+#include "d3d/D3D11Manager.h"
+#include "d3d/resource.h"
 #include "nvimlauncher.h"
 #include <plog/Log.h>
 #include <plog/Appenders/DebugOutputAppender.h>

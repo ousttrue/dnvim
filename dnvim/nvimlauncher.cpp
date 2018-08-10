@@ -1,4 +1,5 @@
 #include "nvimlauncher.h"
+#include "dispatcher.h"
 #include <process.hpp>
 #include <string>
 #include <chrono>
@@ -8,122 +9,6 @@
 #include <functional>
 #include <plog/Log.h>
 
-
-class Dispatcher
-{
-	std::vector<uint8_t> m_buffer;
-	std::unordered_map<std::string, msgpackpp::procedurecall> m_method_map;
-
-public:
-	Dispatcher()
-	{
-	}
-
-	void push_bytes(const char *bytes, size_t n)
-	{
-		auto pos = m_buffer.size();
-		m_buffer.resize(pos + n);
-		for (int i = 0; i < n; ++i, ++pos)
-		{
-			m_buffer[pos] = bytes[i];
-		}
-
-		while (!m_buffer.empty()) {
-			consume();
-		}
-	}
-
-	void add_method(const std::string &method_name, const msgpackpp::procedurecall &proc)
-	{
-		m_method_map.insert(std::make_pair(method_name, proc));
-	}
-
-private:
-	void redraw(const msgpackpp::parser &args)
-	{
-		if (args.is_array()) {
-			LOGD << "[redraw] " << args.count();
-			auto child = args[0];
-			for (int i = 0; i < args.count(); ++i) {
-				
-				auto cmd = child[0].get_string();
-
-				auto found = m_method_map.find(cmd);
-				if (found != m_method_map.end()) {
-					// found
-					auto proc = found->second;
-
-					try {
-						proc(child[1]);
-					}
-					catch (const std::exception &ex)
-					{
-						LOGE << ex.what() << " " << child[1];
-					}
-				}
-				else {
-					LOGE << ", unknown " << cmd;
-				}
-
-				child = child.next();
-			}
-		}
-		else {
-
-			LOGW << "redraw";
-
-		}
-	}
-
-	void consume()
-	{
-		auto msg = msgpackpp::parser(m_buffer.data(), static_cast<int>(m_buffer.size()));
-		auto d = msg.consumed_size();
-		m_buffer.erase(m_buffer.begin(), m_buffer.begin() + d);
-
-		if (!msg.is_array()) {
-			throw std::exception("is not error");
-		}
-
-		auto msgType = msg[0].get_number<int>();
-		if (msgType == 0) {
-			// request
-			throw std::exception("not implemented");
-		}
-		else if (msgType == 1) {
-			// response
-			auto msgId = msg[1].get_number<int>();
-			auto error = msg[2];
-			auto payload = msg[3];
-
-			LOGW
-				<< "response: " << msgId
-				//<< " => " << payload 
-				;
-		}
-		else if (msgType == 2) {
-			// notify
-			auto method = msg[1].get_string();
-
-			if (method == "redraw") {
-
-				redraw(msg[2]);
-
-			}
-			else {
-
-				LOGW
-					<< "notify: " << method
-					//<<  " => " << payload 
-					;
-			}
-
-		}
-		else {
-			throw std::exception("invali msgType");
-		}
-	}
-};
 
 
 struct Highlight
