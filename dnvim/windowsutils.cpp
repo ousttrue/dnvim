@@ -5,38 +5,44 @@
 
 static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    auto window = (UIWindow*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+	auto window = (UIWindow*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
-    switch (message)
-    {
-        case WM_CREATE:
-            {
-                auto window = (UIWindow*)((LPCREATESTRUCT)lParam)->lpCreateParams;
-                SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)window);
-                break;
-            }
+	switch (message)
+	{
+	case WM_CREATE:
+	{
+		auto window = (UIWindow*)((LPCREATESTRUCT)lParam)->lpCreateParams;
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)window);
+		break;
+	}
 
-        case WM_ERASEBKGND:
-            return 0;
+	case WM_ERASEBKGND:
+		return 0;
 
-        case WM_SIZE:
-            window->OnSize(LOWORD(wParam), HIWORD(wParam));
-            return 0;
+	case WM_SIZE:
+		window->OnSize(LOWORD(wParam), HIWORD(wParam));
+		return 0;
 
-        case WM_PAINT:
-            {
-                PAINTSTRUCT ps;
-                HDC hdc = BeginPaint(hWnd, &ps);
-                EndPaint(hWnd, &ps);
-            }
-            return 0;
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		EndPaint(hWnd, &ps);
+		return 0;
+	}
 
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            return 0;
-    }
+	case WM_KEYDOWN:
+	{
+		window->OnKeyDown(wParam);
+		return 0;
+	}
 
-    return DefWindowProc(hWnd, message, wParam, lParam);
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
+	}
+
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 
