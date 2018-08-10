@@ -1,11 +1,14 @@
 #include <process.hpp>
-#include <iostream>
 #include <string>
 #include <chrono>
 #include <thread>
 #include <msgpackpp.h>
 #include <vector>
 #include <functional>
+
+#include <plog/Log.h>
+#include <plog/Appenders/DebugOutputAppender.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
 
 
 class Dispatcher
@@ -43,7 +46,7 @@ private:
 	void redraw(const msgpackpp::parser &args)
 	{
 		if (args.is_array()) {
-			std::cout << "[redraw]";
+			LOGD << "[redraw] " << args.count();
 			auto child = args[0];
 			for (int i = 0; i < args.count(); ++i) {
 				
@@ -59,20 +62,19 @@ private:
 					}
 					catch (const std::exception &ex)
 					{
-						std::cout << ex.what() << " " << child[1] << std::endl;
+						LOGE << ex.what() << " " << child[1];
 					}
 				}
 				else {
-					std::cout << ", unknown " << cmd;
+					LOGE << ", unknown " << cmd;
 				}
 
 				child = child.next();
 			}
-			std::cout << std::endl;
 		}
 		else {
 
-			std::cout << "redraw" << std::endl;
+			LOGW << "redraw";
 
 		}
 	}
@@ -81,7 +83,6 @@ private:
 	{
 		auto msg = msgpackpp::parser(m_buffer.data(), m_buffer.size());
 		auto d = msg.consumed_size();
-		std::cout << "msg " << d << " bytes" << std::endl;
 		m_buffer.erase(m_buffer.begin(), m_buffer.begin() + d);
 
 		if (!msg.is_array()) {
@@ -99,10 +100,10 @@ private:
 			auto error = msg[2];
 			auto payload = msg[3];
 
-			std::cout
+			LOGW
 				<< "response: " << msgId
 				//<< " => " << payload 
-				<< std::endl;
+				;
 		}
 		else if (msgType == 2) {
 			// notify
@@ -115,10 +116,10 @@ private:
 			}
 			else {
 
-				std::cout
+				LOGW
 					<< "notify: " << method
 					//<<  " => " << payload 
-					<< std::endl;
+					;
 			}
 
 		}
@@ -183,7 +184,7 @@ public:
 
 	void mode_info_set(bool cursor_style_enabled, msgpackpp::parser map)
 	{
-		//std::cout << "mode_info_set: " << map << std::endl;
+		//std::cout << "mode_info_set: " << map;
 	}
 
 	void mode_change(std::string mode, int value)
@@ -195,7 +196,12 @@ public:
 
 int main(int argc, char **argv)
 {
-	std::cout << std::endl << "Example 5 - demonstrates Process::try_get_exit_status" << std::endl;
+	//static plog::DebugOutputAppender<plog::TxtFormatter> debugOutputAppender;
+	//plog::init(plog::verbose, &debugOutputAppender);
+	static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+	plog::init(plog::verbose, &consoleAppender);
+
+	LOGI << "Example 5 - demonstrates Process::try_get_exit_status";
 
 	Dispatcher dispatcher;
 	Grid grid;

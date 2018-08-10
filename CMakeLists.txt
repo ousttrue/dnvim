@@ -15,5 +15,6 @@ ADD_EXECUTABLE(${PROJECT_NAME} ${SRC})
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC
 	tiny-process-library
     msgpackpp/include
+    plog/include
     )
 
