@@ -2,6 +2,7 @@
 #include "dispatcher.h"
 #include "grid.h"
 #include <process.hpp>
+#include <plog/Log.h>
 
 
 class NVimImpl
@@ -38,6 +39,26 @@ public:
 		}
 	}
 
+	int m_requestID = 1;
+
+	template<typename ... AS>
+	void Call(const char *method, AS... args)
+	{
+		msgpackpp::packer packer;
+
+		auto tuple = std::make_tuple(args...);
+	
+		packer.pack_array(4)
+			<< 0
+			<< m_requestID++
+			<< method
+			<< tuple
+			;
+
+		auto p = packer.get_payload();
+		m_process->write((const char*)p.data(), p.size());
+	}
+
 	void Launch(const wchar_t *cmd)
 	{
 		auto callback = [this](const char *bytes, size_t n) {
@@ -50,7 +71,7 @@ public:
 		msgpackpp::packer packer;
 		packer.pack_array(4);
 		packer.pack_integer(0);
-		packer.pack_integer(1);
+		packer.pack_integer(m_requestID++);
 		packer.pack_str("nvim_ui_attach");
 		packer.pack_array(3);
 		packer.pack_integer(80);
@@ -72,6 +93,10 @@ public:
 		}
 
 		return false;
+	}
+
+	void Input(const std::string &keys) {
+		Call("nvim_ui_attach", keys);
 	}
 };
 
@@ -95,4 +120,9 @@ void NVim::Launch(const wchar_t *cmd)
 bool NVim::GetExitStatus(int *_exit_status)
 {
 	return m_impl->GetExitStatus(_exit_status);
+}
+
+void NVim::Input(const std::string &keys)
+{
+	m_impl->Input(keys);
 }

@@ -49,6 +49,10 @@ int WINAPI WinMain(
 	}
 
 	wnd->AddOnSize(std::bind(&D3D11Manager::Resize, &d3d11, std::placeholders::_1, std::placeholders::_2));
+	wnd->AddOnKeyDown([&nvim](char code) {
+		char keys[] = { code, 0 };
+		nvim.Input(keys);
+	});
 
 	LOGI << "start main loop";
 	MSG msg;
