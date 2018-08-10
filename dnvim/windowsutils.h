@@ -1,10 +1,32 @@
-#include <string>
 #include <Windows.h>
+#include <string>
+#include <memory>
+#include <functional>
+#include <list>
 
 
-HWND CreateUIWindow(HINSTANCE hInstance, int nCmdShow,
-	const wchar_t *window_class, const wchar_t *window_title,
-	void *userdata);
+class UIWindow
+{
+	HWND m_hWnd = nullptr;
+	typedef std::function<void(int, int)> OnSizeFunc;
+	std::list<OnSizeFunc> m_onSizeFunc;
+
+public:
+	static std::shared_ptr<UIWindow> Create(HINSTANCE hInstance, int nCmdShow,
+		const wchar_t *window_class, const wchar_t *window_title);
+
+	void Attach(HWND hWnd) { m_hWnd = hWnd; }
+	HWND Get()const { return m_hWnd; }
+
+	void AddOnSize(const OnSizeFunc &func)
+	{
+		m_onSizeFunc.push_back(func);
+	}
+	void OnSize(int w, int h)
+	{
+		for (auto &func : m_onSizeFunc)func(w, h);
+	}
+};
 
 
 class Resource
@@ -18,3 +40,4 @@ public:
     ~Resource();
     std::string GetString()const;
 };
+

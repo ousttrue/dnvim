@@ -30,21 +30,25 @@ int WINAPI WinMain(
 	nvim.Launch(LAUNCH_COMMAND);
 
 	LOGI << "create window";
-	D3D11Manager d3d11;
-	auto hWnd = CreateUIWindow(hInstance, nCmdShow, 
-		WINDOW_CLASS, WINDOW_TITLE,
-		&d3d11);
+	auto wnd = UIWindow::Create(hInstance, nCmdShow, 
+		WINDOW_CLASS, WINDOW_TITLE);
+	if (!wnd) {
+		return 1;
+	}
 
 	Resource res(hInstance, ID_SHADERSOURCE, shaderResource);
 	auto shaderSource = res.GetString();
 	if (shaderSource.empty()) {
-		return 1;
+		return 2;
 	}
 
 	LOGI << "d3d initialize";
-	if (!d3d11.Initialize(hWnd, shaderSource, L"")) {
-		return 2;
+	D3D11Manager d3d11;
+	if (!d3d11.Initialize(wnd->Get(), shaderSource, L"")) {
+		return 3;
 	}
+
+	wnd->AddOnSize(std::bind(&D3D11Manager::Resize, &d3d11, std::placeholders::_1, std::placeholders::_2));
 
 	LOGI << "start main loop";
 	MSG msg;

@@ -5,14 +5,14 @@
 
 static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    auto d3d = (D3D11Manager*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+    auto window = (UIWindow*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
     switch (message)
     {
         case WM_CREATE:
             {
-                auto d3d = (D3D11Manager*)((LPCREATESTRUCT)lParam)->lpCreateParams;
-                SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)d3d);
+                auto window = (UIWindow*)((LPCREATESTRUCT)lParam)->lpCreateParams;
+                SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)window);
                 break;
             }
 
@@ -20,7 +20,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             return 0;
 
         case WM_SIZE:
-            d3d->Resize(LOWORD(wParam), HIWORD(wParam));
+            window->OnSize(LOWORD(wParam), HIWORD(wParam));
             return 0;
 
         case WM_PAINT:
@@ -40,38 +40,47 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 }
 
 
-HWND CreateUIWindow(HINSTANCE hInstance, int nCmdShow, 
-	const wchar_t *window_class, const wchar_t *window_title,
-	void *userdata)
+static void RegisterWindowClass(HINSTANCE hInstance, const wchar_t *window_class)
 {
-    {
-        WNDCLASSEX wcex;
-        wcex.cbSize = sizeof(WNDCLASSEX);
-        wcex.style = CS_HREDRAW | CS_VREDRAW;
-        wcex.lpfnWndProc = WndProc;
-        wcex.cbClsExtra = 0;
-        wcex.cbWndExtra = 0;
-        wcex.hInstance = hInstance;
-        wcex.hIcon = NULL;
-        wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-        wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-        wcex.lpszMenuName = NULL;//MAKEINTRESOURCE(IDC_D3D11SAMPLE);
-        wcex.lpszClassName = window_class;
-        wcex.hIconSm = NULL;
-        RegisterClassEx(&wcex);
-    }
+    WNDCLASSEX wcex;
+    wcex.cbSize = sizeof(WNDCLASSEX);
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = WndProc;
+    wcex.cbClsExtra = 0;
+    wcex.cbWndExtra = 0;
+    wcex.hInstance = hInstance;
+    wcex.hIcon = NULL;
+    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = NULL;//MAKEINTRESOURCE(IDC_D3D11SAMPLE);
+    wcex.lpszClassName = window_class;
+    wcex.hIconSm = NULL;
+    RegisterClassEx(&wcex);
+}
+
+
+std::shared_ptr<UIWindow> UIWindow::Create(HINSTANCE hInstance, int nCmdShow, 
+	const wchar_t *window_class, const wchar_t *window_title
+	)
+{
+    RegisterWindowClass(hInstance, window_class);
+
+    auto window=std::make_shared<UIWindow>();
+
     HWND hWnd = CreateWindow(window_class, window_title, WS_OVERLAPPEDWINDOW
             , CW_USEDEFAULT, CW_USEDEFAULT
             , 320, 320
-            , NULL, NULL, hInstance, userdata);
+            , NULL, NULL, hInstance, window.get());
     if (!hWnd)
     {
         return nullptr;
     }
+
+    window->Attach(hWnd);
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
-    return hWnd;
+    return window;
 }
 
 
