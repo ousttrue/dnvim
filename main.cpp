@@ -198,6 +198,63 @@ public:
 #define LAUNCH_COMMAND "nvim --embed"
 
 
+class NVim
+{
+	Dispatcher m_dispatcher;
+	Grid m_grid;
+	std::shared_ptr<TinyProcessLib::Process> m_process;
+
+public:
+	NVim()
+	{
+#define DISPATCHER_ADD_METHOD(method) m_dispatcher.add_method(#method, msgpackpp::make_methodcall(&m_grid, &Grid::method))
+		DISPATCHER_ADD_METHOD(option_set);
+		DISPATCHER_ADD_METHOD(default_colors_set);
+		DISPATCHER_ADD_METHOD(update_fg);
+		DISPATCHER_ADD_METHOD(update_bg);
+		DISPATCHER_ADD_METHOD(update_sp);
+		DISPATCHER_ADD_METHOD(resize);
+		DISPATCHER_ADD_METHOD(clear);
+		DISPATCHER_ADD_METHOD(cursor_goto);
+		DISPATCHER_ADD_METHOD(highlight_set);
+		DISPATCHER_ADD_METHOD(put);
+		DISPATCHER_ADD_METHOD(mode_info_set);
+		DISPATCHER_ADD_METHOD(mode_change);
+#undef DISPACHER_ADD_METHOD
+	}
+
+	void Launch(const char *cmd)
+	{
+		auto callback = [this](const char *bytes, size_t n) {
+
+			this->m_dispatcher.push_bytes(bytes, n);
+
+		};
+		m_process = std::shared_ptr<TinyProcessLib::Process>(new TinyProcessLib::Process(cmd, "", callback, nullptr, true));
+
+		msgpackpp::packer packer;
+		packer.pack_array(4);
+		packer.pack_integer(0);
+		packer.pack_integer(1);
+		packer.pack_str("nvim_ui_attach");
+		packer.pack_array(3);
+		packer.pack_integer(80);
+		packer.pack_integer(56);
+		packer.pack_map(0);
+
+		// std::vector<std::uint8_t>
+		auto p = packer.get_payload();
+		m_process->write((const char*)p.data(), p.size());
+	}
+
+	int GetExitStatus()
+	{
+		//std::this_thread::sleep_for(std::chrono::seconds(2));
+		return m_process->get_exit_status();
+	}
+};
+
+
 int WINAPI WinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -216,48 +273,14 @@ int WINAPI WinMain(
 	plog::init(plog::verbose, &consoleAppender);
 #endif
 
-	LOGI << "dnvim";
+	NVim nvim;
 
-	Dispatcher dispatcher;
-	Grid grid;
+	LOGI << "launch nvim";
+	nvim.Launch(LAUNCH_COMMAND);
 
-#define DISPATCHER_ADD_METHOD(method) dispatcher.add_method(#method, msgpackpp::make_methodcall(&grid, &Grid::method))
-	DISPATCHER_ADD_METHOD(option_set);
-	DISPATCHER_ADD_METHOD(default_colors_set);
-	DISPATCHER_ADD_METHOD(update_fg);
-	DISPATCHER_ADD_METHOD(update_bg);
-	DISPATCHER_ADD_METHOD(update_sp);
-	DISPATCHER_ADD_METHOD(resize);
-	DISPATCHER_ADD_METHOD(clear);
-	DISPATCHER_ADD_METHOD(cursor_goto);
-	DISPATCHER_ADD_METHOD(highlight_set);
-	DISPATCHER_ADD_METHOD(put);
-	DISPATCHER_ADD_METHOD(mode_info_set);
-	DISPATCHER_ADD_METHOD(mode_change);
-#undef DISPACHER_ADD_METHOD
+	LOGI << "create window";
 
-	TinyProcessLib::Process process1(LAUNCH_COMMAND, "", [&dispatcher](const char *bytes, size_t n) {
-
-		dispatcher.push_bytes(bytes, n);
-
-	}, nullptr, true);
-
-	msgpackpp::packer packer;
-	packer.pack_array(4);
-	packer.pack_integer(0);
-	packer.pack_integer(1);
-	packer.pack_str("nvim_ui_attach");
-	packer.pack_array(3);
-	packer.pack_integer(80);
-	packer.pack_integer(56);
-	packer.pack_map(0);
-
-	// std::vector<std::uint8_t>
-	auto p = packer.get_payload();
-	process1.write((const char*)p.data(), p.size());
-
-	std::this_thread::sleep_for(std::chrono::seconds(2));
-	auto exit_status = process1.get_exit_status();
+	auto exit_status = nvim.GetExitStatus();
 
 	return exit_status;
 }
