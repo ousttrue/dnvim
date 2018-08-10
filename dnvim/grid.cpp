@@ -1,5 +1,6 @@
 #include "grid.h"
 #include <plog/Log.h>
+#include <codecvt>
 
 
 void Grid::option_set(std::string key, bool enable) 
@@ -53,11 +54,15 @@ void Grid::highlight_set(Highlight hl)
 {
 }
 
-void Grid::put(std::string text)
+void Grid::put(std::string_view text)
 {
 	LOGD << "put: '" << text << "'";
 	auto cell = get_current_cell();
-	for (char c : text)
+
+	std::wstring_convert<std::codecvt_utf8<std::uint32_t>, std::uint32_t> conv;
+	auto unicode = conv.from_bytes(text); // UTF8 -> UTF32
+
+	for (char32_t c : unicode)
 	{
 		cell->code = c;
 		++cell;

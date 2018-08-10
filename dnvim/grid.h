@@ -52,7 +52,7 @@ public:
 	void clear();
 	void cursor_goto(int col, int row);
 	void highlight_set(Highlight hl);
-	void put(std::string text);
+	void put(std::string_view text);
 	void mode_info_set(bool cursor_style_enabled, msgpackpp::parser map);
 	void mode_change(std::string mode, int value);
 };
