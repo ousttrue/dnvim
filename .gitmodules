@@ -4,3 +4,6 @@
 [submodule "msgpackpp"]
 	path = msgpackpp
 	url = git@github.com:ousttrue/msgpackpp.git
+[submodule "plog"]
+	path = plog
+	url = https://github.com/SergiusTheBest/plog.git
