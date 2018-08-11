@@ -96,7 +96,8 @@ public:
 	}
 
 	void Input(const std::string &keys) {
-		Call("nvim_ui_attach", keys);
+		LOGD << "Input: " << keys;
+		Call("nvim_input", keys);
 	}
 };
 
