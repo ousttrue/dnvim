@@ -58,6 +58,9 @@ void Grid::put(std::string_view text)
 {
 	LOGD << "put: '" << text << "'";
 	auto cell = get_current_cell();
+	if (!cell) {
+		return;
+	}
 
 	std::wstring_convert<std::codecvt_utf8<std::uint32_t>, std::uint32_t> conv;
 	auto unicode = conv.from_bytes(text); // UTF8 -> UTF32

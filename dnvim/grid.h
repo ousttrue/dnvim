@@ -37,6 +37,9 @@ class Grid
 	Cell* get_current_cell()
 	{
 		auto index = m_cursor.row * m_cols + m_cursor.col;
+		if (index < 0 || index >= m_cells.size()) {
+			return nullptr;
+		}
 		return &m_cells[index];
 	}
 
