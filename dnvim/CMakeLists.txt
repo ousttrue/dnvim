@@ -30,5 +30,6 @@ TARGET_LINK_LIBRARIES(${EXE_NAME}
     d3dcompiler
     dxguid
 	D2D1
+	DWrite
     )
 

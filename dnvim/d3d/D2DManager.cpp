@@ -1,18 +1,38 @@
 #include "D2D1Manager.h"
 #include <d3d11.h>
-#include <d2d1_2.h>
 #include <dxgi1_2.h>
+#include <d2d1_2.h>
+#include <dwrite.h>
 #include "../grid.h"
 #include "plog/Log.h"
+#include "DWriteHelper.h"
+
+
+static Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> CreateBrush(
+	const Microsoft::WRL::ComPtr<ID2D1DeviceContext> &context,
+	D2D1::ColorF::Enum color)
+{
+	Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
+	auto hr = context->CreateSolidColorBrush(
+		D2D1::ColorF(color)
+		, &brush);
+	if (FAILED(hr)) {
+		return nullptr;
+	}
+	return brush;
+}
 
 
 class GridDrawer
 {
-	Microsoft::WRL::ComPtr<struct ID2D1SolidColorBrush> m_cellBursh;
-	Microsoft::WRL::ComPtr<struct ID2D1SolidColorBrush> m_cursorBrush;
+	Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> m_fgBrush;
+	Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> m_cellBursh;
+	Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> m_cursorBrush;
 	int m_cellWidth = 8;
 	int m_cellHeight = 16;
 	int m_lineMergin = 2;
+
+	Microsoft::WRL::ComPtr<IDWriteFontFace> m_face;
 
 	class DrawGuard
 	{
@@ -38,19 +58,22 @@ public:
 		const Microsoft::WRL::ComPtr<ID2D1Bitmap1> &bitmap,
 		const Cell*cell, int cellCount, int cols, int cursorY, int cursorX)
 	{
+		if (!m_fgBrush) {
+			m_fgBrush = CreateBrush(context, D2D1::ColorF::Black);
+		}
 		if (!m_cellBursh) {
-			auto hr = context->CreateSolidColorBrush(
-				D2D1::ColorF(D2D1::ColorF(0x9ACD32, 1.0f))
-				, &m_cellBursh);
-			if (FAILED(hr)) {
-				return;
-			}
+			m_cellBursh = CreateBrush(context, D2D1::ColorF::White);
 		}
 		if (!m_cursorBrush) {
-			auto hr = context->CreateSolidColorBrush(
-				D2D1::ColorF(D2D1::ColorF(0x9A32CD, 1.0f))
-				, &m_cursorBrush);
-			if (FAILED(hr)) {
+			m_cursorBrush = CreateBrush(context, D2D1::ColorF::LightGreen);
+		}
+
+		if (!m_face) {
+			auto family = L"Arial";
+			auto face = L"Normal";
+			m_face = GetFontFace(family, face);
+			if (!m_face) {
+				LOGE << "fail to get font: " << family << ", " << face;
 				return;
 			}
 		}
@@ -59,13 +82,13 @@ public:
 			DrawGuard guard(context, bitmap);
 
 			context->SetTransform(D2D1::Matrix3x2F::Identity());
-			context->Clear(D2D1::ColorF(D2D1::ColorF::White));
+			context->Clear(D2D1::ColorF(D2D1::ColorF::Gray));
 
 			auto rows = cellCount / cols;
 			int y = 0;
 			for (auto row = 0; row < rows; ++row, y+=(m_cellHeight + m_lineMergin)) {
 				int x = 0;
-				for (auto col = 0; col < cols; ++col, x+=(m_cellWidth)) {
+				for (auto col = 0; col < cols; ++col, x+=(m_cellWidth), ++cell) {
 
 					D2D1_RECT_F rect = D2D1::RectF(
 						x,
@@ -74,11 +97,37 @@ public:
 						y + m_cellHeight
 					);
 
-					if (row == cursorY && col == cursorX) {
-						context->FillRectangle(&rect, m_cursorBrush.Get());
+					if (cell->code)
+					{
+						if (row == cursorY && col == cursorX) {
+							context->FillRectangle(&rect, m_cursorBrush.Get());
+						}
+						else {
+							context->FillRectangle(&rect, m_cellBursh.Get());
+						}
+
+						UINT32 code = cell->code;
+						UINT16 glyphIndex;
+						m_face->GetGlyphIndices(&code, 1, &glyphIndex);
+						DWRITE_GLYPH_OFFSET offset = { 0 };
+
+						DWRITE_GLYPH_RUN run = { 0 };
+						run.fontFace = m_face.Get();
+						run.fontEmSize = m_cellHeight * 0.8; // m‚ª“ü‚éƒTƒCƒY
+						run.glyphCount = 1;
+						run.glyphIndices = &glyphIndex;
+						run.glyphOffsets = &offset;
+						
+						context->DrawGlyphRun(D2D1::Point2F(x, y + m_cellHeight),
+							&run,
+							m_fgBrush.Get());
+
 					}
 					else {
-						context->FillRectangle(&rect, m_cellBursh.Get());
+						// empty
+						if (row == cursorY && col == cursorX) {
+							context->FillRectangle(&rect, m_cursorBrush.Get());
+						}
 					}
 				}
 			}
