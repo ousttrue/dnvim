@@ -69,8 +69,10 @@ public:
 		}
 
 		if (!m_face) {
-			auto family = L"Arial";
-			auto face = L"Normal";
+			//auto family = L"Arial";
+			//auto face = L"Normal";
+			auto family = L"Consolas";
+			auto face = L"Regular";
 			m_face = GetFontFace(family, face);
 			if (!m_face) {
 				LOGE << "fail to get font: " << family << ", " << face;
@@ -113,12 +115,12 @@ public:
 
 						DWRITE_GLYPH_RUN run = { 0 };
 						run.fontFace = m_face.Get();
-						run.fontEmSize = m_cellHeight * 0.8; // mが入るサイズ
+						run.fontEmSize = m_cellHeight * 0.8; // mが横にはみ出さないサイズ
 						run.glyphCount = 1;
 						run.glyphIndices = &glyphIndex;
 						run.glyphOffsets = &offset;
 						
-						context->DrawGlyphRun(D2D1::Point2F(x, y + m_cellHeight),
+						context->DrawGlyphRun(D2D1::Point2F(x, y + m_cellHeight), // baseline
 							&run,
 							m_fgBrush.Get());
 
@@ -131,16 +133,6 @@ public:
 					}
 				}
 			}
-
-			/*
-			D2D1_SIZE_F rtSize = m_d2dDeviceContext->GetSize();
-			D2D1_RECT_F rect = D2D1::RectF(
-				rtSize.width / 2 - 50.0f,
-				rtSize.height / 2 - 50.0f,
-				rtSize.width / 2 + 50.0f,
-				rtSize.height / 2 + 50.0f
-			);
-			*/
 		}
 	}
 };
