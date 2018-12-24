@@ -3,6 +3,9 @@
 #include "grid.h"
 #include <process.hpp>
 #include <plog/Log.h>
+#include "windowsutils.h"
+#include "d3d/D3D11Manager.h"
+#include "d3d/resource.h"
 
 
 class NVimImpl
@@ -10,6 +13,7 @@ class NVimImpl
 	Dispatcher m_dispatcher;
 	Grid m_grid;
 	std::shared_ptr<TinyProcessLib::Process> m_process;
+	std::shared_ptr<class D3D11Manager> m_d3d;
 
 public:
 	NVimImpl()
@@ -61,9 +65,12 @@ public:
 
 	void Launch(const wchar_t *cmd)
 	{
-		auto callback = [this](const char *bytes, size_t n) {
+		auto d3d = m_d3d;
+		auto callback = [this, d3d]( const char *bytes, size_t n) {
 
 			this->m_dispatcher.push_bytes(bytes, n);
+
+			d3d->Render();
 
 		};
 		m_process = std::shared_ptr<TinyProcessLib::Process>(new TinyProcessLib::Process(cmd, L"", callback, nullptr, true));
@@ -89,6 +96,7 @@ public:
 		//std::this_thread::sleep_for(std::chrono::seconds(2));
 		if (m_process->try_get_exit_status(exit_status)) {
 			if (_exit_status)*_exit_status = exit_status;
+			m_process = nullptr;
 			return true;
 		}
 
@@ -98,6 +106,30 @@ public:
 	void Input(const std::string &keys) {
 		LOGD << "Input: " << keys;
 		Call("nvim_input", keys);
+	}
+
+	bool Initialize(HINSTANCE hInstance, HWND hWnd, const WCHAR *shaderResource)
+	{
+		Resource res(hInstance, ID_SHADERSOURCE, shaderResource);
+		auto shaderSource = res.GetString();
+		if (shaderSource.empty()) {
+			LOGE << "fail to get shader resource";
+			return false;
+		}
+
+		LOGI << "d3d initialize";
+		m_d3d = std::make_shared<D3D11Manager>();
+		if (!m_d3d->Initialize(hWnd, shaderSource, L"")) {
+			LOGE << "fail to initilaize d3d";
+			return false;
+		}
+
+		return true;
+	}
+
+	void Resize(int w, int h)
+	{
+		m_d3d->Resize(w, h);
 	}
 };
 
@@ -126,4 +158,14 @@ bool NVim::GetExitStatus(int *_exit_status)
 void NVim::Input(const std::string &keys)
 {
 	m_impl->Input(keys);
+}
+
+bool NVim::Initialize(HINSTANCE hInstance, HWND hWnd, const WCHAR *shaderResource)
+{
+	return m_impl->Initialize(hInstance, hWnd, shaderResource);
+}
+
+void NVim::Resize(int w, int h)
+{
+	m_impl->Resize(w, h);
 }

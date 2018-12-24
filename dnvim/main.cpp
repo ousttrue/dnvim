@@ -1,5 +1,3 @@
-#include "d3d/D3D11Manager.h"
-#include "d3d/resource.h"
 #include "nvimlauncher.h"
 #include <plog/Log.h>
 #include <plog/Appenders/DebugOutputAppender.h>
@@ -27,7 +25,6 @@ int WINAPI WinMain(
 
 	LOGI << "launch nvim";
 	NVim nvim;
-	nvim.Launch(LAUNCH_COMMAND);
 
 	LOGI << "create window";
 	auto wnd = UIWindow::Create(hInstance, nCmdShow, 
@@ -36,19 +33,16 @@ int WINAPI WinMain(
 		return 1;
 	}
 
-	Resource res(hInstance, ID_SHADERSOURCE, shaderResource);
-	auto shaderSource = res.GetString();
-	if (shaderSource.empty()) {
+	if (!nvim.Initialize(hInstance, wnd->Get(), shaderResource))
+	{
 		return 2;
 	}
+	nvim.Launch(LAUNCH_COMMAND);
 
-	LOGI << "d3d initialize";
-	D3D11Manager d3d11;
-	if (!d3d11.Initialize(wnd->Get(), shaderSource, L"")) {
-		return 3;
-	}
+	wnd->AddOnSize([&nvim](int w, int h) {
+		nvim.Resize(w, h);
+	});
 
-	wnd->AddOnSize(std::bind(&D3D11Manager::Resize, &d3d11, std::placeholders::_1, std::placeholders::_2));
 	wnd->AddOnKeyDown([&nvim](char code) {
 		char keys[] = { code, 0 };
 		nvim.Input(keys);
@@ -57,24 +51,13 @@ int WINAPI WinMain(
 	LOGI << "start main loop";
 	MSG msg;
 	int exit_status;
-	while (true)
-	{
-		if (nvim.GetExitStatus(&exit_status)) {
-			break;
-		}
 
-		if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
-		{
-			if (!GetMessage(&msg, NULL, 0, 0)) {
-				exit_status = (int)msg.wParam;
-				break;
-			}
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+	while (GetMessage(&msg, NULL, 0, 0) > 0) {
+		if (nvim.GetExitStatus(&exit_status)) {
+			PostQuitMessage(0);
 		}
-		else {
-			d3d11.Render();
-		}
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
 	}
 
 	return exit_status;
