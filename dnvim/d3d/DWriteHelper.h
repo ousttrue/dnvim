@@ -11,7 +11,7 @@ static std::wstring GetString(const Microsoft::WRL::ComPtr<IDWriteLocalizedStrin
 	}
 
 	std::vector<WCHAR> buffer(length + 1);
-	hr = str->GetString(0, buffer.data(), buffer.size());
+	hr = str->GetString(0, buffer.data(), (UINT32)buffer.size());
 	if (FAILED(hr)) {
 		return L"";
 	}
@@ -41,7 +41,7 @@ static Microsoft::WRL::ComPtr<IDWriteFontFace> GetFontFace(
 	}
 
 	auto familyCount = collection->GetFontFamilyCount();
-	for (int i = 0; i < familyCount; ++i) {
+	for (unsigned int i = 0; i < familyCount; ++i) {
 		Microsoft::WRL::ComPtr<IDWriteFontFamily> family;
 		hr = collection->GetFontFamily(i, &family);
 		if (FAILED(hr)) {
@@ -60,7 +60,7 @@ static Microsoft::WRL::ComPtr<IDWriteFontFace> GetFontFace(
 		if (familyName == targetFamily) {
 
 			auto fontCount = family->GetFontCount();
-			for (int j = 0; j < fontCount; ++j) {
+			for (unsigned int j = 0; j < fontCount; ++j) {
 				Microsoft::WRL::ComPtr<IDWriteFont> font;
 				hr = family->GetFont(j, &font);
 				if (FAILED(hr)) {

@@ -87,9 +87,9 @@ public:
 			context->Clear(D2D1::ColorF(D2D1::ColorF::Gray));
 
 			auto rows = cellCount / cols;
-			int y = 0;
+			float y = 0;
 			for (auto row = 0; row < rows; ++row, y+=(m_cellHeight + m_lineMergin)) {
-				int x = 0;
+				float x = 0;
 				for (auto col = 0; col < cols; ++col, x+=(m_cellWidth), ++cell) {
 
 					D2D1_RECT_F rect = D2D1::RectF(
@@ -115,7 +115,7 @@ public:
 
 						DWRITE_GLYPH_RUN run = { 0 };
 						run.fontFace = m_face.Get();
-						run.fontEmSize = m_cellHeight * 0.8; // mが横にはみ出さないサイズ
+						run.fontEmSize = m_cellHeight * 0.8f; // mが横にはみ出さないサイズ
 						run.glyphCount = 1;
 						run.glyphIndices = &glyphIndex;
 						run.glyphOffsets = &offset;
