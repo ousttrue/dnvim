@@ -41,7 +41,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_CHAR:
 	{
-		window->OnKeyDown(wParam);
+		window->OnKeyDown((int)wParam);
 		return 0;
 	}
 

@@ -29,5 +29,6 @@ TARGET_LINK_LIBRARIES(${EXE_NAME}
     D3D11
     d3dcompiler
     dxguid
+	D2D1
     )
 

@@ -6,6 +6,7 @@
 #include "windowsutils.h"
 #include "d3d/D3D11Manager.h"
 #include "d3d/resource.h"
+#include "d3d/D2D1Manager.h"
 
 
 class NVimImpl
@@ -13,10 +14,13 @@ class NVimImpl
 	Dispatcher m_dispatcher;
 	Grid m_grid;
 	std::shared_ptr<TinyProcessLib::Process> m_process;
-	std::shared_ptr<class D3D11Manager> m_d3d;
+	std::shared_ptr<D3D11Manager> m_d3d;
+	std::shared_ptr<D2D1Manager> m_d2d;
 
 public:
 	NVimImpl()
+		: m_d3d(new D3D11Manager)
+		, m_d2d(new D2D1Manager)	
 	{
 #define DISPATCHER_ADD_METHOD(method) m_dispatcher.add_method(#method, msgpackpp::make_methodcall(&m_grid, &Grid::method))
 		DISPATCHER_ADD_METHOD(option_set);
@@ -66,11 +70,14 @@ public:
 	void Launch(const wchar_t *cmd)
 	{
 		auto d3d = m_d3d;
-		auto callback = [this, d3d]( const char *bytes, size_t n) {
+		auto d2d = m_d2d;
+		auto grid = &m_grid;
+		auto callback = [this, d3d, d2d, grid]( const char *bytes, size_t n) {
 
 			this->m_dispatcher.push_bytes(bytes, n);
-
-			d3d->Render();
+			d2d->SetTargetTexture(d3d->GetBackBuffer());
+			d2d->Render(grid);
+			d3d->EndRender();
 
 		};
 		m_process = std::shared_ptr<TinyProcessLib::Process>(new TinyProcessLib::Process(cmd, L"", callback, nullptr, true));
@@ -118,9 +125,15 @@ public:
 		}
 
 		LOGI << "d3d initialize";
-		m_d3d = std::make_shared<D3D11Manager>();
 		if (!m_d3d->Initialize(hWnd, shaderSource, L"")) {
 			LOGE << "fail to initilaize d3d";
+			return false;
+		}
+
+		LOGI << "d2d initialize";
+		if (!m_d2d->Initialize(m_d3d->GetDevice()))
+		{
+			LOGE << "fail to initilaize d2d";
 			return false;
 		}
 
@@ -129,6 +142,7 @@ public:
 
 	void Resize(int w, int h)
 	{
+		m_d2d->SetTargetTexture(nullptr);
 		m_d3d->Resize(w, h);
 	}
 };

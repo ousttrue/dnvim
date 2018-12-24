@@ -1,6 +1,7 @@
 #include "D3D11Manager.h"
 #include "shader.h"
 #include <d3d11.h>
+#include "../grid.h"
 
 
 class RenderTarget
@@ -103,7 +104,7 @@ bool D3D11Manager::Initialize(HWND hWnd
         , const std::string &shaderSource, const std::wstring &textureFile)
 {
     D3D_DRIVER_TYPE dtype = D3D_DRIVER_TYPE_HARDWARE;
-    UINT flags = 0;
+    UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT; // D2D compatible
     D3D_FEATURE_LEVEL featureLevels[] = {
         D3D_FEATURE_LEVEL_11_0,
         D3D_FEATURE_LEVEL_10_1,
@@ -118,10 +119,10 @@ bool D3D11Manager::Initialize(HWND hWnd
 
     DXGI_SWAP_CHAIN_DESC scDesc;
     ZeroMemory(&scDesc, sizeof(scDesc));
-    scDesc.BufferCount = 1;
+    scDesc.BufferCount = 2;
     scDesc.BufferDesc.Width = 0;
     scDesc.BufferDesc.Height = 0;
-    scDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    scDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     scDesc.BufferDesc.RefreshRate.Numerator = 60;
     scDesc.BufferDesc.RefreshRate.Denominator = 1;
     scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -155,13 +156,24 @@ bool D3D11Manager::Initialize(HWND hWnd
     return true;
 }
 
+Microsoft::WRL::ComPtr<struct ID3D11Texture2D> D3D11Manager::GetBackBuffer()
+{
+	if (!m_backbuffer) {
+		if (m_pSwapChain) {
+			m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &m_backbuffer);
+		}
+	}
+	return m_backbuffer;
+}
+
 void D3D11Manager::Resize(int w, int h)
 {
 	if (!m_pDeviceContext){
 		return;
 	}
     // clear render target
-    m_renderTarget=std::make_shared<RenderTarget>();
+	m_backbuffer = nullptr;
+	m_renderTarget=std::make_shared<RenderTarget>();
     m_renderTarget->SetAndClear(m_pDeviceContext);
     // resize swapchain
     DXGI_SWAP_CHAIN_DESC desc;
@@ -175,22 +187,23 @@ void D3D11Manager::Resize(int w, int h)
 
 void D3D11Manager::Render()
 {
-    if(!m_renderTarget->IsInitialized()){
-        Microsoft::WRL::ComPtr<ID3D11Texture2D> pBackBuffer;
-        m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &pBackBuffer);
+	if (!m_renderTarget->IsInitialized()) {
 		// Create RTV
-        if(!m_renderTarget->Initialize(m_pDevice, pBackBuffer)){
-            return;
-        }
-    }
+		if (!m_renderTarget->Initialize(m_pDevice, GetBackBuffer())) {
+			return;
+		}
+	}
 	m_renderTarget->SetAndClear(m_pDeviceContext);
 
 	// draw
 	m_shader->Animation();
 	m_shader->Draw(m_pDeviceContext);
 
-    m_pDeviceContext->Flush();
+	m_pDeviceContext->Flush();
+}
 
+void D3D11Manager::EndRender()
+{
     // output
     m_pSwapChain->Present(NULL, NULL);
 }
