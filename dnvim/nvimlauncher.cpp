@@ -76,7 +76,10 @@ public:
 
 			this->m_dispatcher.push_bytes(bytes, n);
 			d2d->SetTargetTexture(d3d->GetBackBuffer());
-			d2d->Render(grid);
+
+			auto &cells = grid->get_cells();
+			auto &cursor = grid->get_cursor();
+			d2d->Render(cells.data(), (int)cells.size(), grid->get_cols(), cursor.row, cursor.col);
 			d3d->EndRender();
 
 		};

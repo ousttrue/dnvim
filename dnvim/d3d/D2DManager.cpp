@@ -6,6 +6,97 @@
 #include "plog/Log.h"
 
 
+class GridDrawer
+{
+	Microsoft::WRL::ComPtr<struct ID2D1SolidColorBrush> m_cellBursh;
+	Microsoft::WRL::ComPtr<struct ID2D1SolidColorBrush> m_cursorBrush;
+	int m_cellWidth = 8;
+	int m_cellHeight = 16;
+	int m_lineMergin = 2;
+
+	class DrawGuard
+	{
+		Microsoft::WRL::ComPtr<ID2D1DeviceContext> m_context;
+
+	public:
+		DrawGuard(const Microsoft::WRL::ComPtr<ID2D1DeviceContext> &context
+			, const Microsoft::WRL::ComPtr<ID2D1Bitmap1> &bitmap)
+			: m_context(context)
+		{
+			m_context->SetTarget(bitmap.Get());
+			m_context->BeginDraw();
+		}
+
+		~DrawGuard()
+		{
+			m_context->EndDraw();
+		}
+	};
+public:
+	void Draw(
+		const Microsoft::WRL::ComPtr<ID2D1DeviceContext> &context,
+		const Microsoft::WRL::ComPtr<ID2D1Bitmap1> &bitmap,
+		const Cell*cell, int cellCount, int cols, int cursorY, int cursorX)
+	{
+		if (!m_cellBursh) {
+			auto hr = context->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF(0x9ACD32, 1.0f))
+				, &m_cellBursh);
+			if (FAILED(hr)) {
+				return;
+			}
+		}
+		if (!m_cursorBrush) {
+			auto hr = context->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF(0x9A32CD, 1.0f))
+				, &m_cursorBrush);
+			if (FAILED(hr)) {
+				return;
+			}
+		}
+
+		{
+			DrawGuard guard(context, bitmap);
+
+			context->SetTransform(D2D1::Matrix3x2F::Identity());
+			context->Clear(D2D1::ColorF(D2D1::ColorF::White));
+
+			auto rows = cellCount / cols;
+			int y = 0;
+			for (auto row = 0; row < rows; ++row, y+=(m_cellHeight + m_lineMergin)) {
+				int x = 0;
+				for (auto col = 0; col < cols; ++col, x+=(m_cellWidth)) {
+
+					D2D1_RECT_F rect = D2D1::RectF(
+						x,
+						y,
+						x + m_cellWidth,
+						y + m_cellHeight
+					);
+
+					if (row == cursorY && col == cursorX) {
+						context->FillRectangle(&rect, m_cursorBrush.Get());
+					}
+					else {
+						context->FillRectangle(&rect, m_cellBursh.Get());
+					}
+				}
+			}
+
+			/*
+			D2D1_SIZE_F rtSize = m_d2dDeviceContext->GetSize();
+			D2D1_RECT_F rect = D2D1::RectF(
+				rtSize.width / 2 - 50.0f,
+				rtSize.height / 2 - 50.0f,
+				rtSize.width / 2 + 50.0f,
+				rtSize.height / 2 + 50.0f
+			);
+			*/
+		}
+	}
+};
+
+
 static void HrToStr(HRESULT hr) {
 	LPVOID string;
 	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -23,11 +114,13 @@ static void HrToStr(HRESULT hr) {
 
 
 D2D1Manager::D2D1Manager()
+	: m_drawer(new GridDrawer())
 {
 }
 
 D2D1Manager::~D2D1Manager()
 {
+	delete m_drawer;
 }
 
 bool D2D1Manager::Initialize(const Microsoft::WRL::ComPtr<ID3D11Device> &device)
@@ -59,14 +152,6 @@ bool D2D1Manager::Initialize(const Microsoft::WRL::ComPtr<ID3D11Device> &device)
 		return false;
 	}
 
-	//ƒuƒ‰ƒV‚Ìì¬
-	hr = m_d2dDeviceContext->CreateSolidColorBrush(
-		D2D1::ColorF(D2D1::ColorF(0x9ACD32, 1.0f))
-		, &m_brush);
-	if (FAILED(hr)) {
-		return false;
-	}
-
 	return true;
 }
 
@@ -82,33 +167,13 @@ void D2D1Manager::SetTargetTexture(const Microsoft::WRL::ComPtr<ID3D11Texture2D>
 	if (m_d2dDeviceContext) {
 		m_d2dDeviceContext->SetTarget(nullptr);
 	}
-	m_renderTarget.Reset();
+	m_bitmap.Reset();
 }
 
 
-class DrawGuard
+void D2D1Manager::Render(const Cell*cell, int cellCount, int cols, int cursorY, int cursorX)
 {
-	Microsoft::WRL::ComPtr<ID2D1DeviceContext> m_context;
-
-public:
-	DrawGuard(const Microsoft::WRL::ComPtr<ID2D1DeviceContext> &context
-		, const Microsoft::WRL::ComPtr<ID2D1Bitmap1> &bitmap)
-		: m_context(context)
-	{
-		m_context->SetTarget(bitmap.Get());
-		m_context->BeginDraw();
-	}
-
-	~DrawGuard()
-	{
-		m_context->EndDraw();
-	}
-};
-
-
-void D2D1Manager::Render(const Grid *grid)
-{
-	if (!m_renderTarget) {
+	if (!m_bitmap) {
 		if (!m_target) {
 			return;
 		}
@@ -122,32 +187,13 @@ void D2D1Manager::Render(const Grid *grid)
 			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)
 		);
 
-		auto hr = m_d2dDeviceContext->CreateBitmapFromDxgiSurface(dxgiSurface.Get(), &bp, &m_renderTarget);
+		auto hr = m_d2dDeviceContext->CreateBitmapFromDxgiSurface(dxgiSurface.Get(), &bp, &m_bitmap);
 		if (FAILED(hr)) {
 			return;
 		}
 		LOGI << "d2d rendertarget set";
 	}
 
-	{
-		DrawGuard guard(m_d2dDeviceContext, m_renderTarget);
-
-		m_d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-		m_d2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::White));
-
-		/*
-		if (m_src) {
-			m_d2dDeviceContext->DrawBitmap(m_src.Get());
-		}
-		*/
-
-		D2D1_SIZE_F rtSize = m_d2dDeviceContext->GetSize();
-		D2D1_RECT_F rect = D2D1::RectF(
-			rtSize.width / 2 - 50.0f,
-			rtSize.height / 2 - 50.0f,
-			rtSize.width / 2 + 50.0f,
-			rtSize.height / 2 + 50.0f
-		);
-		m_d2dDeviceContext->FillRectangle(&rect, m_brush.Get());
-	}
+	m_drawer->Draw(m_d2dDeviceContext, m_bitmap,
+		cell, cellCount, cols, cursorY, cursorX);
 }

@@ -31,7 +31,7 @@ struct Cursor
 class Grid
 {
 	std::vector<Cell> m_cells;
-	int m_cols=0;
+	int m_cols = 0;
 	Cursor m_cursor;
 
 	Cell* get_current_cell()
@@ -44,9 +44,13 @@ class Grid
 	}
 
 public:
+	const std::vector<Cell> &get_cells()const { return m_cells; }
+	int get_cols()const { return m_cols; }
+	const Cursor &get_cursor()const { return m_cursor; }
+
 	void option_set(std::string key, bool enable);
 	void default_colors_set(
-		int rgb_fg, int rgb_bg, int rgb_sp, 
+		int rgb_fg, int rgb_bg, int rgb_sp,
 		int cterm_fg, int cterm_bg);
 	void update_fg(int color);
 	void update_bg(int color);

@@ -43,9 +43,9 @@ void Grid::clear()
 	}
 }
 
-void Grid::cursor_goto(int col, int row) 
+void Grid::cursor_goto(int row, int col) 
 {
-	LOGD << "cursor_goto: " << col << ", " << row;
+	LOGD << "cursor_goto: " << row << ", " << col;
 	m_cursor.col = col;
 	m_cursor.row = row;
 }

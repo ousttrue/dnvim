@@ -1,6 +1,6 @@
 # dnvim(Direct nvim)
 
-nvim frontend by D3D
+nvim frontend by D2D
 
 # dependencies
 
