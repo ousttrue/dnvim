@@ -74,7 +74,8 @@ static void RegisterWindowClass(HINSTANCE hInstance, const wchar_t *window_class
 
 
 std::shared_ptr<UIWindow> UIWindow::Create(HINSTANCE hInstance, int nCmdShow, 
-	const wchar_t *window_class, const wchar_t *window_title
+	const wchar_t *window_class, const wchar_t *window_title,
+	int w, int h
 	)
 {
     RegisterWindowClass(hInstance, window_class);
@@ -83,7 +84,7 @@ std::shared_ptr<UIWindow> UIWindow::Create(HINSTANCE hInstance, int nCmdShow,
 
     HWND hWnd = CreateWindow(window_class, window_title, WS_OVERLAPPEDWINDOW
             , CW_USEDEFAULT, CW_USEDEFAULT
-            , 320, 320
+            , w, h
             , NULL, NULL, hInstance, window.get());
     if (!hWnd)
     {

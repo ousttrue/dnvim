@@ -2,7 +2,13 @@
 
 nvim frontend by D2D
 
-# dependencies
+## nvim ui
+
+* https://github.com/neovim/neovim/blob/master/runtime/doc/ui.txt
+
+### nvim_ui_attach
+
+## dependencies
 
 * https://gitlab.com/eidheim/tiny-process-library
 * https://github.com/ousttrue/msgpackpp

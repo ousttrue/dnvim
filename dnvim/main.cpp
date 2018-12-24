@@ -28,7 +28,8 @@ int WINAPI WinMain(
 
 	LOGI << "create window";
 	auto wnd = UIWindow::Create(hInstance, nCmdShow, 
-		WINDOW_CLASS, WINDOW_TITLE);
+		WINDOW_CLASS, WINDOW_TITLE,
+		640, 480);
 	if (!wnd) {
 		return 1;
 	}

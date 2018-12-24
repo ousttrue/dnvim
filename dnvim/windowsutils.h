@@ -16,7 +16,8 @@ class UIWindow
 	std::list<OnKeyDownFunc> m_onKeyDownFunc;
 public:
 	static std::shared_ptr<UIWindow> Create(HINSTANCE hInstance, int nCmdShow,
-		const wchar_t *window_class, const wchar_t *window_title);
+		const wchar_t *window_class, const wchar_t *window_title,
+		int w, int h);
 
 	void Attach(HWND hWnd) { m_hWnd = hWnd; }
 	HWND Get()const { return m_hWnd; }

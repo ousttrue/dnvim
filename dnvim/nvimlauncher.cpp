@@ -40,9 +40,10 @@ public:
 
 	~NVimImpl()
 	{
-		if (m_process) {
-			m_process->kill();
-			m_process->get_exit_status();
+		auto process = m_process;
+		if (process) {
+			process->kill();
+			process->get_exit_status();
 			m_process = nullptr;
 		}
 	}
@@ -92,7 +93,7 @@ public:
 		packer.pack_str("nvim_ui_attach");
 		packer.pack_array(3);
 		packer.pack_integer(80);
-		packer.pack_integer(56);
+		packer.pack_integer(20);
 		packer.pack_map(0);
 
 		// std::vector<std::uint8_t>
@@ -102,9 +103,14 @@ public:
 
 	bool GetExitStatus(int *_exit_status)
 	{
-		int exit_status;
+		auto process = m_process;
+		if (!process) {
+			return 0;
+		}
+
 		//std::this_thread::sleep_for(std::chrono::seconds(2));
-		if (m_process->try_get_exit_status(exit_status)) {
+		int exit_status;
+		if (process->try_get_exit_status(exit_status)) {
 			if (_exit_status)*_exit_status = exit_status;
 			m_process = nullptr;
 			return true;
