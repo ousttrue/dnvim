@@ -9,6 +9,13 @@
 #include "d3d/D2D1Manager.h"
 
 
+struct Option
+{
+	bool rgb = true;
+};
+MPPP_MAP_SERIALIZER(Option, 1, rgb);
+
+
 class NVimImpl
 {
 	Dispatcher m_dispatcher;
@@ -53,18 +60,7 @@ public:
 	template<typename ... AS>
 	void Call(const char *method, AS... args)
 	{
-		msgpackpp::packer packer;
-
-		auto tuple = std::make_tuple(args...);
-	
-		packer.pack_array(4)
-			<< 0
-			<< m_requestID++
-			<< method
-			<< tuple
-			;
-
-		auto p = packer.get_payload();
+		auto p = msgpackpp::make_rpc_request(m_requestID++, method, args...);
 		m_process->write((const char*)p.data(), p.size());
 	}
 
@@ -86,19 +82,8 @@ public:
 		};
 		m_process = std::shared_ptr<TinyProcessLib::Process>(new TinyProcessLib::Process(cmd, L"", callback, nullptr, true));
 
-		msgpackpp::packer packer;
-		packer.pack_array(4);
-		packer.pack_integer(0);
-		packer.pack_integer(m_requestID++);
-		packer.pack_str("nvim_ui_attach");
-		packer.pack_array(3);
-		packer.pack_integer(80);
-		packer.pack_integer(20);
-		packer.pack_map(0);
-
-		// std::vector<std::uint8_t>
-		auto p = packer.get_payload();
-		m_process->write((const char*)p.data(), p.size());
+		Option option;
+		Call("nvim_ui_attach", 80, 20, option);
 	}
 
 	bool GetExitStatus(int *_exit_status)
