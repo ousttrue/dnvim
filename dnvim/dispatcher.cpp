@@ -82,8 +82,8 @@ void Dispatcher::consume()
         auto error = msg[2];
         auto payload = msg[3];
 
-        LOGW
-            << "response: " << msgId
+		LOGW
+			<< "response: " << msg.to_json()
             //<< " => " << payload 
             ;
     }
