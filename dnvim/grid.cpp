@@ -29,23 +29,33 @@ void Grid::update_sp(int color)
 
 void Grid::resize(int cols, int rows) 
 {
-	LOGD << "resize: " << cols << ", " << rows;
 	m_cells.resize(cols * rows);
 	m_cols = cols;
 }
 
 void Grid::clear()
 {
-	LOGD << "clear";
 	for (auto &cell : m_cells)
 	{
 		cell.code = 0; // space
 	}
 }
 
+void Grid::eol_clear()
+{
+	auto cell = get_current_cell();
+	if (!cell) {
+		return;
+	}
+
+	for (int i = m_cursor.col; i < m_cols; ++i)
+	{
+		cell->code = 0;
+	}
+}
+
 void Grid::cursor_goto(int row, int col) 
 {
-	LOGD << "cursor_goto: " << row << ", " << col;
 	m_cursor.col = col;
 	m_cursor.row = row;
 }
@@ -56,7 +66,6 @@ void Grid::highlight_set(Highlight hl)
 
 void Grid::put(std::string_view text)
 {
-	LOGD << "put: '" << text << "'";
 	auto cell = get_current_cell();
 	if (!cell) {
 		return;
@@ -68,7 +77,7 @@ void Grid::put(std::string_view text)
 	for (char32_t c : unicode)
 	{
 		cell->code = c;
-		++cell;
+		cell = advance_cursor();
 	}
 }
 

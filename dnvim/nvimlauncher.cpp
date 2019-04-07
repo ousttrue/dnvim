@@ -42,6 +42,8 @@ public:
 		DISPATCHER_ADD_METHOD(put);
 		DISPATCHER_ADD_METHOD(mode_info_set);
 		DISPATCHER_ADD_METHOD(mode_change);
+		DISPATCHER_ADD_METHOD(flush);
+		DISPATCHER_ADD_METHOD(eol_clear);
 #undef DISPACHER_ADD_METHOD
 	}
 
@@ -72,12 +74,14 @@ public:
 		auto callback = [this, d3d, d2d, grid]( const char *bytes, size_t n) {
 
 			this->m_dispatcher.push_bytes(bytes, n);
-			d2d->SetTargetTexture(d3d->GetBackBuffer());
 
-			auto &cells = grid->get_cells();
-			auto &cursor = grid->get_cursor();
-			d2d->Render(cells.data(), (int)cells.size(), grid->get_cols(), cursor.row, cursor.col);
-			d3d->EndRender();
+			if (grid->use_flush()) {
+				d2d->SetTargetTexture(d3d->GetBackBuffer());
+				auto& cells = grid->get_cells();
+				auto& cursor = grid->get_cursor();
+				d2d->Render(cells.data(), (int)cells.size(), grid->get_cols(), cursor.row, cursor.col);
+				d3d->EndRender();
+			}
 
 		};
 		m_process = std::shared_ptr<TinyProcessLib::Process>(new TinyProcessLib::Process(cmd, L"", callback, nullptr, true));

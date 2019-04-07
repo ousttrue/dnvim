@@ -30,19 +30,22 @@ void Dispatcher::redraw(const msgpackpp::parser &args)
         for (int i = 0; i < args.count(); ++i) {
             
             auto cmd = child[0].get_string();
+			LOGD << "[" << i << "] " << child.to_json();
 
             auto found = m_method_map.find(cmd);
             if (found != m_method_map.end()) {
                 // found
                 auto proc = found->second;
 
-                try {
-                    proc(child[1]);
-                }
-                catch (const std::exception &ex)
-                {
-                    LOGE << ex.what() << " " << child[1];
-                }
+				for (int i = 1; i < child.count(); ++i) {
+					try {
+						proc(child[i]);
+					}
+					catch (const std::exception & ex)
+					{
+						LOGE << ex.what() << " " << child[1];
+					}
+				}
             }
             else {
                 LOGE << ", unknown " << cmd;

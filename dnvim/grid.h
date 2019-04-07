@@ -33,6 +33,7 @@ class Grid
 	std::vector<Cell> m_cells;
 	int m_cols = 0;
 	Cursor m_cursor;
+	bool m_flush = false;
 
 	Cell* get_current_cell()
 	{
@@ -43,10 +44,27 @@ class Grid
 		return &m_cells[index];
 	}
 
+	Cell* advance_cursor()
+	{
+		++m_cursor.col;
+		if (m_cursor.col >= m_cols)
+		{
+			m_cursor.col = 0;
+			++m_cursor.row;
+		}
+		return get_current_cell();
+	}
+
 public:
 	const std::vector<Cell> &get_cells()const { return m_cells; }
 	int get_cols()const { return m_cols; }
 	const Cursor &get_cursor()const { return m_cursor; }
+	bool use_flush()
+	{
+		if (!m_flush)return false;
+		m_flush = false;
+		return true;
+	}
 
 	void option_set(std::string key, bool enable);
 	void default_colors_set(
@@ -62,4 +80,6 @@ public:
 	void put(std::string_view text);
 	void mode_info_set(bool cursor_style_enabled, msgpackpp::parser map);
 	void mode_change(std::string mode, int value);
+	void flush() { m_flush = true; }
+	void eol_clear();
 };
