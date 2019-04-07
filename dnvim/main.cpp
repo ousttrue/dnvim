@@ -51,7 +51,7 @@ int WINAPI WinMain(
 
 	LOGI << "start main loop";
 	MSG msg;
-	int exit_status;
+	int exit_status = 0;
 
 	while (GetMessage(&msg, NULL, 0, 0) > 0) {
 		if (nvim.GetExitStatus(&exit_status)) {
