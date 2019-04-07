@@ -4,7 +4,7 @@
 #include <d3dcompiler.h>
 #include <vector>
 #include <memory>
-
+#include <string>
 
 enum SHADERSTAGE
 {
