@@ -27,8 +27,8 @@ void Dispatcher::redraw(const msgpackpp::parser &args)
     if (args.is_array()) {
         LOGD << "[redraw] " << args.count();
         auto child = args[0];
-        for (int i = 0; i < args.count(); ++i) {
-            
+        for (int i = 0; i < args.count(); ++i, child = child.next()) {
+
             auto cmd = child[0].get_string();
 			LOGD << "[" << i << "] " << child.to_json();
 
@@ -37,13 +37,14 @@ void Dispatcher::redraw(const msgpackpp::parser &args)
                 // found
                 auto proc = found->second;
 
-				for (int i = 1; i < child.count(); ++i) {
+				auto arg = child[1];
+				for (int i = 1; i < child.count(); ++i, arg= arg.next()) {
 					try {
-						proc(child[i]);
+						proc(arg);
 					}
 					catch (const std::exception & ex)
 					{
-						LOGE << ex.what() << " " << child[1];
+						LOGE << ex.what() << " " << arg;
 					}
 				}
             }
@@ -51,7 +52,7 @@ void Dispatcher::redraw(const msgpackpp::parser &args)
                 LOGE << ", unknown " << cmd;
             }
 
-            child = child.next();
+            ;
         }
     }
     else {

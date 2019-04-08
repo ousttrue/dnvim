@@ -75,7 +75,8 @@ public:
 
 			this->m_dispatcher.push_bytes(bytes, n);
 
-			if (grid->use_flush()) {
+			if (grid->use_flush()) 
+			{
 				d2d->SetTargetTexture(d3d->GetBackBuffer());
 				auto& cells = grid->get_cells();
 				auto& cursor = grid->get_cursor();
