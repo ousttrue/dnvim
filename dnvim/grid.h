@@ -66,7 +66,7 @@ public:
 		return true;
 	}
 
-	void option_set(std::string key, bool enable);
+	void option_set(std::string key, msgpackpp::parser enable);
 	void default_colors_set(
 		int rgb_fg, int rgb_bg, int rgb_sp,
 		int cterm_fg, int cterm_bg);

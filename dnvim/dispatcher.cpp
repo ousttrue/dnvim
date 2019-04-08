@@ -56,7 +56,7 @@ void Dispatcher::redraw(const msgpackpp::parser &args)
     }
     else {
 
-        LOGW << "redraw";
+        LOGE << "redraw not array";
 
     }
 }
@@ -84,7 +84,6 @@ void Dispatcher::consume()
 
 		LOGW
 			<< "response: " << msg.to_json()
-            //<< " => " << payload 
             ;
     }
     else if (msgType == 2) {
@@ -98,9 +97,8 @@ void Dispatcher::consume()
         }
         else {
 
-            LOGW
-                << "notify: " << method
-                //<<  " => " << payload 
+            LOGE
+                << "notify: " << msg.to_json()
                 ;
         }
 
